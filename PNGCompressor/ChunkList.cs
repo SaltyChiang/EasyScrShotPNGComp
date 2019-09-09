@@ -11,17 +11,21 @@ namespace PNGComp
     {
         private int chunkCount;
         private List<Chunk> chunkList;
+        private int indexOfIDAT;
 
         public ChunkList(Stream inputStream, int offset)
         {
             chunkCount = 0;
             Append(inputStream, offset);
-            //chunkList[chunkCount - 1].UpdateCRC32();
         }
-        public int GetLength()
+
+        public ChunkList(ChunkList chunkList)
         {
-            return chunkCount;
+            this.chunkCount = chunkList.chunkCount;
+            this.chunkList = chunkList.chunkList;
+            this.indexOfIDAT = chunkList.indexOfIDAT;
         }
+
         public void CombineIDAT()
         {
             int chunkCountNew = 0;
@@ -29,13 +33,14 @@ namespace PNGComp
             chunkCountNew++;
             for (int i = 1; i < chunkCount; i++)
             {
-                if (chunkList[i-1].GetChunkType().Equals("IDAT") && chunkList[i].GetChunkType().Equals("IDAT"))
+                if (chunkList[i - 1].GetChunkType().Equals("IDAT") && chunkList[i].GetChunkType().Equals("IDAT")) 
                 {
                     chunkListNew[chunkCountNew - 1].Combine(chunkList[i]);
                 }
                 else if (chunkList[i - 1].GetChunkType().Equals("IDAT") && !chunkList[i].GetChunkType().Equals("IDAT"))
                 {
                     chunkListNew[chunkCountNew - 1].Refresh();
+                    indexOfIDAT = chunkCountNew - 1;
                     chunkListNew.Add(chunkList[i]);
                     chunkCountNew++;
                 }
@@ -47,6 +52,11 @@ namespace PNGComp
             }
             chunkCount = chunkCountNew;
             chunkList = chunkListNew;
+        }
+
+        private void GetIDAT()
+        {
+
         }
 
         private void Append(Stream inputStream, int offset)
@@ -71,14 +81,6 @@ namespace PNGComp
                 chunkOut = chunkOut.Concat(chunkList[i].PrepareForOutputChunk()).ToArray();
             }
             return chunkOut;
-        }
-
-        public void PrintListInfo()
-        {
-            for (int i = 0; i < chunkCount; i++)
-            {
-                chunkList[i].PrintChunkInfo();
-            }
         }
     }
 
@@ -112,7 +114,6 @@ namespace PNGComp
 
         public int GetChunkLength()
         {
-            //Console.WriteLine(this.Length + " " + this.Type + " " + "\n");
             return this.Length + 12;
         }
 
@@ -133,12 +134,10 @@ namespace PNGComp
             Array.Reverse(this.LengthByte);
             this.UpdateCRC32();
         }
-
-        public void PrintChunkInfo()
+        public void UpdateIDAT(byte[] dataNew)
         {
-            Console.WriteLine("{0} {1} {2}\n", this.Type, this.Length, BitConverter.ToString(this.CRC));
-        }
 
+        }
         private void UpdateCRC32()
         {
             CRC32 crc32 = new CRC32();
