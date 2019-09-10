@@ -54,9 +54,14 @@ namespace PNGComp
             chunkList = chunkListNew;
         }
 
-        private void GetIDAT()
+        public Chunk GetIDAT()
         {
+            return chunkList[indexOfIDAT];
+        }
 
+        public void SetIDAT(Chunk chunk)
+        {
+            chunkList[indexOfIDAT] = chunk;
         }
 
         private void Append(Stream inputStream, int offset)
@@ -122,6 +127,16 @@ namespace PNGComp
             return this.Type;
         }
 
+        public byte[] GetChunkData()
+        {
+            return this.Data;
+        }
+
+        public void SetChunkData(byte[] data)
+        {
+            this.Data = data;
+        }
+
         public void Combine(Chunk chunk)
         {
             this.Length += chunk.Length;
@@ -130,6 +145,7 @@ namespace PNGComp
 
         public void Refresh()
         {
+            this.Length = this.Data.Length;
             this.LengthByte = BitConverter.GetBytes(this.Length);
             Array.Reverse(this.LengthByte);
             this.UpdateCRC32();

@@ -24,7 +24,6 @@ namespace PNGComp
             file.Read(pngId, 0, 8);
             offset += pngId.Length;
             chunkList = new ChunkList(file, offset);
-            chunkList.CombineIDAT();
         }
     }
 }
