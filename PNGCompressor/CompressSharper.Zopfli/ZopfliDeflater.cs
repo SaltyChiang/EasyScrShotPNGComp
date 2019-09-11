@@ -29,7 +29,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CompressSharper
+namespace CompressSharper.Zopfli
 {
     /// <summary>
     /// DEFLATE using the Zopfli algorithm
@@ -61,7 +61,7 @@ namespace CompressSharper
             UseCache = true;
             NumberOfIterations = 15;
             MaximumBlockSplitting = 15;
-            BlockSplitting = global::CompressSharper.BlockSplitting.First;
+            BlockSplitting = BlockSplitting.First;
             UseLazyMatching = true;
         }
 
@@ -3430,5 +3430,38 @@ namespace CompressSharper
         }
 
         #endregion BlockState
+
     }
+    
+    #region Enum
+
+    public enum BlockType
+    {
+        Uncompressed,
+        Fixed,
+        Dynamic
+    }
+
+    /// <summary>
+    /// Determines how to split the blocks
+    /// </summary>
+    public enum BlockSplitting
+    {
+        /// <summary>
+        /// No block splitting
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// Chooses the blocksplit points first, then does iterative LZ77 on each individual block
+        /// </summary>
+        First,
+
+        /// <summary>
+        /// Chooses the blocksplit points last
+        /// </summary>
+        Last
+    }
+
+    #endregion
 }

@@ -26,7 +26,7 @@ namespace PNGComp
             this.indexOfIDAT = chunkList.indexOfIDAT;
         }
 
-        public void CombineIDAT()
+        public Chunk CombineIDAT()
         {
             int chunkCountNew = 0;
             List<Chunk> chunkListNew = new List<Chunk> { chunkList[0] };
@@ -52,10 +52,7 @@ namespace PNGComp
             }
             chunkCount = chunkCountNew;
             chunkList = chunkListNew;
-        }
 
-        public Chunk GetIDAT()
-        {
             return chunkList[indexOfIDAT];
         }
 

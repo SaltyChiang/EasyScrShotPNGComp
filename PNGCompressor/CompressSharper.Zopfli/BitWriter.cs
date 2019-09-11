@@ -23,7 +23,7 @@
 using System;
 using System.IO;
 
-namespace CompressSharper
+namespace CompressSharper.Zopfli
 {
     /// <summary>
     /// Used by the Deflater to write bit encoded to an output stream

@@ -3,19 +3,28 @@ using System.IO;
 using System.IO.Compression;
 using System.Collections.Generic;
 using System.Text;
-using CompressSharper;
+using CompressSharper.Zopfli;
+using ComponentAce.Zlib;
 
 namespace PNGComp
 {
     class Compressor
     {
-        //public ChunkList chunkList;
         private Chunk idat;
         public Compressor(ChunkList chunkList)
         {
-            // this.chunkList = new ChunkList(chunkList);
-            chunkList.CombineIDAT();
-            idat = chunkList.GetIDAT();
+            idat = chunkList.CombineIDAT();
+        }
+
+        private static void CopyStream(Stream input, Stream output)
+        {
+            byte[] buffer = new byte[2000];
+            int len;
+            while ((len = input.Read(buffer, 0, 2000)) > 0)
+            {
+                output.Write(buffer, 0, len);
+            }
+            output.Flush();
         }
 
         public void CompressIDAT()
@@ -32,20 +41,19 @@ namespace PNGComp
                     tempStream.Position = 0;
                     using (MemoryStream outputStream = new MemoryStream())
                     {
-                        outputStream.WriteByte(0x78);
-                        outputStream.WriteByte(0xDA);
-                        //using (DeflateStream deflateStream = new DeflateStream(outputStream, CompressionLevel.Optimal, true))
-                        //{
-                        //    tempStream.CopyTo(deflateStream);
-                        //}
-                        byte[] dataRaw = new byte[tempStream.Length];
-                        tempStream.Read(dataRaw, 0, dataRaw.Length);
-                        ZopfliDeflater zopfliDeflater = new ZopfliDeflater(outputStream);
-                        zopfliDeflater.Deflate(dataRaw, false);
+                        //byte[] dataRaw = new byte[tempStream.Length];
+                        //tempStream.Read(dataRaw, 0, dataRaw.Length);
+                        //ZopfliDeflater zopfliDeflater = new ZopfliDeflater(outputStream);
+                        //zopfliDeflater.Deflate(dataRaw, false);
+
+                        ZOutputStream zOutputStream = new ZOutputStream(outputStream, zlibConst.Z_BEST_COMPRESSION);
+                        CopyStream(tempStream, zOutputStream);
+                        zOutputStream.Flush();
 
                         byte[] dataNew = new byte[outputStream.Length];
                         outputStream.Position = 0;
                         outputStream.Read(dataNew, 0, dataNew.Length);
+
                         idat.SetChunkData(dataNew);
                         idat.Refresh();
                     }
