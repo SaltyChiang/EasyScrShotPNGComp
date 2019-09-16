@@ -1,10 +1,6 @@
-﻿using System;
+﻿using ComponentAce.Zlib;
 using System.IO;
 using System.IO.Compression;
-using System.Collections.Generic;
-using System.Text;
-using CompressSharper.Zopfli;
-using ComponentAce.Zlib;
 
 namespace PNGComp
 {
@@ -18,9 +14,9 @@ namespace PNGComp
 
         private static void CopyStream(Stream input, Stream output)
         {
-            byte[] buffer = new byte[2000];
+            byte[] buffer = new byte[4096];
             int len;
-            while ((len = input.Read(buffer, 0, 2000)) > 0)
+            while ((len = input.Read(buffer, 0, 4096)) > 0)
             {
                 output.Write(buffer, 0, len);
             }

@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace PNGComp
 {
     class Program

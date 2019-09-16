@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace PNGComp
 {
@@ -22,7 +19,7 @@ namespace PNGComp
             offset = 0;
             this.inputPath = inputPath;
             this.outputPath = outputPath;
-            
+
         }
 
         public void Compress()

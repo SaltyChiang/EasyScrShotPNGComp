@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PNGComp
 {
@@ -33,7 +32,7 @@ namespace PNGComp
             chunkCountNew++;
             for (int i = 1; i < chunkCount; i++)
             {
-                if (chunkList[i - 1].GetChunkType().Equals("IDAT") && chunkList[i].GetChunkType().Equals("IDAT")) 
+                if (chunkList[i - 1].GetChunkType().Equals("IDAT") && chunkList[i].GetChunkType().Equals("IDAT"))
                 {
                     chunkListNew[chunkCountNew - 1].Combine(chunkList[i]);
                 }
@@ -147,10 +146,7 @@ namespace PNGComp
             Array.Reverse(this.LengthByte);
             this.UpdateCRC32();
         }
-        public void UpdateIDAT(byte[] dataNew)
-        {
 
-        }
         private void UpdateCRC32()
         {
             CRC32 crc32 = new CRC32();

@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -1631,7 +1630,7 @@ namespace CompressSharper.Zopfli
                 var storeStart = 0;
                 var storeEnd = storeSize;
 
-                for (int numBlocks = 1; numBlocks < maxBlocks && (storeEnd - storeStart) >= 10; )
+                for (int numBlocks = 1; numBlocks < maxBlocks && (storeEnd - storeStart) >= 10;)
                 {
 #if DEBUG
                     Debug.Assert(storeStart < storeEnd);
@@ -3432,7 +3431,7 @@ namespace CompressSharper.Zopfli
         #endregion BlockState
 
     }
-    
+
     #region Enum
 
     public enum BlockType
