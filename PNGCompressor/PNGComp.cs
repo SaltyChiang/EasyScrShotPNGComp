@@ -26,7 +26,7 @@ namespace PNGComp
         {
             Read();
             Compressor compressor = new Compressor(chunkList);
-            compressor.CompressIDAT();
+            compressor.CompressIDAT(false);
             compressor.UpdateChunkList(chunkList);
             Write();
         }
