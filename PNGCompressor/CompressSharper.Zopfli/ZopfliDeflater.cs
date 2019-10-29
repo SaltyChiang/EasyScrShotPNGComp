@@ -301,9 +301,6 @@ namespace CompressSharper.Zopfli
                 position += store._distances[i] == 0 ? 1 : store._literalLengths[i];
             }
 
-#if DEBUG
-            Debug.Assert(split.Count == nlz77points);
-#endif
             return split.ToArray();
         }
 
@@ -381,9 +378,6 @@ namespace CompressSharper.Zopfli
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DeflateBlock(byte[] buffer, int bufferStart, int bufferEnd, BlockType blockType, bool finalBlock)
         {
-#if DEBUG
-            Debug.Assert(blockType == BlockType.Fixed || blockType == BlockType.Dynamic);
-#endif
             if (blockType == BlockType.Fixed)
             {
                 DeflateFixedBlock(buffer, bufferStart, bufferEnd, finalBlock);
@@ -469,9 +463,6 @@ namespace CompressSharper.Zopfli
         {
             unchecked
             {
-#if DEBUG
-                Debug.Assert(!((bufferEnd - bufferStart) > MaximumUncompressedBlockSize));
-#endif
 
                 _writer.Write((byte)(finalBlock ? 1 : 0));
                 _writer.Write(0, 2);
@@ -618,9 +609,6 @@ namespace CompressSharper.Zopfli
 
                     if (bitlengths[i] < 0 && bitlengths[i] > -1e-5)
                         bitlengths[i] = 0;
-#if DEBUG
-                    Debug.Assert(bitlengths[i] >= 0);
-#endif
                 }
             }
 
@@ -732,9 +720,6 @@ namespace CompressSharper.Zopfli
                         }
                     }
 
-#if DEBUG
-                    Debug.Assert(_freeNodes.Count > 0);
-#endif
                     return CreateNew(weight, count, tail, lists);
                 }
             }
@@ -775,9 +760,6 @@ namespace CompressSharper.Zopfli
 
                 //Check special cases and error conditions.
 
-#if DEBUG
-                Debug.Assert(!((1 << maxBits) < numsymbols));
-#endif
                 if (numsymbols == 0) //No symbols at all. OK.
                     return;
 
@@ -971,9 +953,6 @@ namespace CompressSharper.Zopfli
             /// </summary>
             public void WriteBlock(int start, int end, bool finalBlock, BitWriter writer)
             {
-#if DEBUG
-                Debug.Assert(_blockType == BlockType.Dynamic || _blockType == BlockType.Fixed);
-#endif
 
                 int[] ll_counts = new int[288];
                 int[] d_counts = new int[32];
@@ -1004,13 +983,6 @@ namespace CompressSharper.Zopfli
                     PatchDistanceCodesForBuggyDecoders(ref d_lengths);
                     AddDynamicTree(ll_lengths, d_lengths, writer);
 
-#if DEBUG
-                    /* Assert that for every present symbol, the code length is non-zero. */
-                    for (int i = 0; i < 288; i++)
-                        Debug.Assert(ll_counts[i] == 0 || ll_lengths[i] > 0);
-                    for (int i = 0; i < 32; i++)
-                        Debug.Assert(d_counts[i] == 0 || d_lengths[i] > 0);
-#endif
                 }
 
                 ConvertLengthsToSymbols(ll_lengths, 288, 15, ref ll_symbols);
@@ -1042,10 +1014,6 @@ namespace CompressSharper.Zopfli
 
                     if (dist == 0)
                     {
-#if DEBUG
-                        Debug.Assert(litlen < 256);
-                        Debug.Assert(ll_lengths[litlen] > 0);
-#endif
                         writer.WriteHuffman(ll_symbols[litlen], (int)ll_lengths[litlen]);
                         testlength++;
                     }
@@ -1053,11 +1021,7 @@ namespace CompressSharper.Zopfli
                     {
                         int lls = _lengthSymbolTable[litlen];
                         int ds = GetDistSymbol(dist);
-#if DEBUG
-                        Debug.Assert(litlen >= 3 && litlen <= 288);
-                        Debug.Assert(ll_lengths[lls] > 0);
-                        Debug.Assert(d_lengths[ds] > 0);
-#endif
+
                         writer.WriteHuffman(ll_symbols[lls], (int)ll_lengths[lls]);
 
                         writer.Write((uint)_lengthExtraBitsValueTable[litlen], _lengthExtraBitsTable[litlen]);
@@ -1121,9 +1085,6 @@ namespace CompressSharper.Zopfli
                 {
                     lld_lengths[i] = i < 257 + hlit
                         ? ll_lengths[i] : d_lengths[i - 257 - hlit];
-#if DEBUG
-                    Debug.Assert(lld_lengths[i] < 16);
-#endif
                 }
 
                 for (int i = 0; i < lld_total; i++)
@@ -1184,9 +1145,6 @@ namespace CompressSharper.Zopfli
                         rle.Add(lld_lengths[i]);
                         rle_bits.Add(0);
                     }
-#if DEBUG
-                    Debug.Assert(rle[rle.Count - 1] <= 18);
-#endif
                 }
 
                 for (int i = 0; i < 19; i++)
@@ -1298,9 +1256,6 @@ namespace CompressSharper.Zopfli
 
                 for (int i = 0; i < symbolSize; i++)
                 {
-#if DEBUG
-                    Debug.Assert(lengths[i] <= maxbits);
-#endif
                     blCount[lengths[i]]++;
                 }
 
@@ -1375,10 +1330,6 @@ namespace CompressSharper.Zopfli
                 uint[] literalLengthLengths = new uint[288];
                 uint[] distanceLengths = new uint[32];
 
-#if DEBUG
-                // This is not for uncompressed blocks.
-                Debug.Assert(_blockType == BlockType.Fixed || _blockType == BlockType.Dynamic);
-#endif
                 if (_blockType == BlockType.Fixed)
                 {
                     GetFixedTree(ref literalLengthLengths, ref distanceLengths);
@@ -1632,9 +1583,6 @@ namespace CompressSharper.Zopfli
 
                 for (int numBlocks = 1; numBlocks < maxBlocks && (storeEnd - storeStart) >= 10;)
                 {
-#if DEBUG
-                    Debug.Assert(storeStart < storeEnd);
-#endif
                     var llpos = FindMinimum((index) =>
                     {
                         double ec1 = 0;
@@ -1647,10 +1595,6 @@ namespace CompressSharper.Zopfli
                         return ec1 + ec2;
                     }, storeStart + 1, storeEnd);
 
-#if DEBUG
-                    Debug.Assert(llpos > storeStart);
-                    Debug.Assert(llpos < storeEnd);
-#endif
                     Parallel.Invoke(
                     () => { splitCost1 = CalculateBlockSize(storeStart, llpos); },
                     () => { splitCost2 = CalculateBlockSize(llpos, storeEnd); },
@@ -1959,14 +1903,9 @@ namespace CompressSharper.Zopfli
                 //limit == maximum match
                 if (sublen != null && !(_length[lmcpos] == 0 || _dist[lmcpos] != 0))
                 {
-#if DEBUG
-                    Debug.Assert(_length[lmcpos] == 1 && _dist[lmcpos] == 0);
-#endif
                     _dist[lmcpos] = (ushort)(length < MinimumMatch ? 0 : distance);
                     _length[lmcpos] = (ushort)(length < MinimumMatch ? 0 : length);
-#if DEBUG
-                    Debug.Assert(!(_length[lmcpos] == 1 && _dist[lmcpos] == 0));
-#endif
+
                     SublenToCache(sublen, lmcpos, length);
                 }
             }
@@ -1998,12 +1937,6 @@ namespace CompressSharper.Zopfli
                     {
                         CacheToSublen(lmcpos, length, ref sublen);
                         distance = sublen[length];
-#if DEBUG
-                        if (limit == ZopfliDeflater.MaximumMatch && length >= ZopfliDeflater.MinimumMatch)
-                        {
-                            Debug.Assert(sublen[length] == _dist[lmcpos]);
-                        }
-#endif
                     }
 
                     return new Match(length, distance);
@@ -2078,19 +2011,8 @@ namespace CompressSharper.Zopfli
                 }
                 if (j < CacheLength)
                 {
-#if DEBUG
-                    Debug.Assert(bestlength == length);
-#endif
                     _sublen[cachePos + ((CacheLength - 1) * 3)] = (byte)(bestlength - 3);
                 }
-#if DEBUG
-                else
-                {
-                    Debug.Assert(bestlength <= length);
-                }
-
-                Debug.Assert(bestlength == MaxCachedSublen(pos));
-#endif
             }
         }
 
@@ -2321,22 +2243,6 @@ namespace CompressSharper.Zopfli
 
         #region DebugHelper
 
-#if DEBUG
-
-        private static void VerifyLenDist(byte[] buffer, int datasize, int pos, int dist, int length)
-        {
-            Debug.Assert(pos + length <= datasize);
-            for (int i = 0; i < length; i++)
-            {
-                if (buffer[pos - dist + i] != buffer[pos + i])
-                {
-                    Debug.Assert(buffer[pos - dist + i] == buffer[pos + i]);
-                    break;
-                }
-            }
-        }
-
-#endif
 
         #endregion DebugHelper
 
@@ -2578,11 +2484,6 @@ namespace CompressSharper.Zopfli
                 for (int index = lengthArray.Length - 1; index > 0; index -= lengthArray[index])
                 {
                     pathList.Add(lengthArray[index]);
-#if DEBUG
-                    Debug.Assert(lengthArray[index] <= index);
-                    Debug.Assert(lengthArray[index] <= ZopfliDeflater.MaximumMatch);
-                    Debug.Assert(lengthArray[index] != 0);
-#endif
                 }
 
                 pathList.Reverse();
@@ -2686,15 +2587,10 @@ namespace CompressSharper.Zopfli
                             distance = previousMatch;
                             lengthScore = previousLengthScore;
                             /* Add to output. */
-#if DEBUG
-                            VerifyLenDist(buffer, bufferEnd, i - 1, distance, length);
-#endif
+
                             store.Add((ushort)length, (ushort)distance);
                             for (int j = 2; j < length; j++)
                             {
-#if DEBUG
-                                Debug.Assert(i < bufferEnd);
-#endif
                                 i++;
                                 hash.UpdateHash(buffer, i, bufferEnd);
                             }
@@ -2712,9 +2608,6 @@ namespace CompressSharper.Zopfli
                     /* Add to output. */
                     if (lengthScore >= MinimumMatch)
                     {
-#if DEBUG
-                        VerifyLenDist(buffer, bufferEnd, i, distance, length);
-#endif
                         store.Add((ushort)length, (ushort)distance);
                     }
                     else
@@ -2725,9 +2618,6 @@ namespace CompressSharper.Zopfli
 
                     for (int j = 1; j < length; j++)
                     {
-#if DEBUG
-                        Debug.Assert(i < bufferEnd);
-#endif
                         i++;
                         hash.UpdateHash(buffer, i, bufferEnd);
                     }
@@ -2792,9 +2682,6 @@ namespace CompressSharper.Zopfli
                     /* Add to output. */
                     if (lengthScore >= MinimumMatch)
                     {
-#if DEBUG
-                        VerifyLenDist(buffer, bufferEnd, i, distance, length);
-#endif
                         store.Add((ushort)length, (ushort)distance);
                     }
                     else
@@ -2805,9 +2692,6 @@ namespace CompressSharper.Zopfli
 
                     for (int j = 1; j < length; j++)
                     {
-#if DEBUG
-                        Debug.Assert(i < bufferEnd);
-#endif
                         i++;
                         hash.UpdateHash(buffer, i, bufferEnd);
                     }
@@ -3053,9 +2937,6 @@ namespace CompressSharper.Zopfli
                 for (int i = 0; i < path.Count; i++)
                 {
                     int length = path[i];
-#if DEBUG
-                    Debug.Assert(position < bufferEnd);
-#endif
                     hash.UpdateHash(buffer, position, bufferEnd);
 
                     /* Add to output. */
@@ -3064,10 +2945,6 @@ namespace CompressSharper.Zopfli
                         /* Get the distance by recalculating longest match. The found length should match the length from the path. */
                         //Why would you do this???
                         var distance = FindLongestMatch(hash, buffer, position, bufferEnd, ref length, ref dummySubLen)._distance;
-#if DEBUG
-                        //Debug.Assert(!(dummyLength != length && length > 2 && dummyLength > 2));
-                        VerifyLenDist(buffer, bufferEnd, position, distance, (ushort)length);
-#endif
                         store.Add((ushort)length, (ushort)distance);
                     }
                     else
@@ -3075,9 +2952,7 @@ namespace CompressSharper.Zopfli
                         length = 1;
                         store.Add(buffer[position], 0);
                     }
-#if DEBUG
-                    Debug.Assert(position + length <= bufferEnd);
-#endif
+
                     for (int j = 1; j < length; j++)
                     {
                         hash.UpdateHash(buffer, position + j, bufferEnd);
@@ -3174,9 +3049,6 @@ namespace CompressSharper.Zopfli
                     if (bufferIndex + 1 <= bufferEnd)
                     {
                         double newCost = costs[lengthArrayIndex] + costModel(buffer[bufferIndex], 0);
-#if DEBUG
-                        Debug.Assert(newCost >= 0);
-#endif
                         if (newCost < costs[lengthArrayIndex + 1])
                         {
                             costs[lengthArrayIndex + 1] = newCost;
@@ -3191,23 +3063,15 @@ namespace CompressSharper.Zopfli
                             continue;
 
                         var newCost = costs[lengthArrayIndex] + costModel((ushort)k, sublen[k]);
-#if DEBUG
-                        Debug.Assert(newCost >= 0);
-#endif
+
                         if (newCost < costs[lengthArrayIndex + k])
                         {
-#if DEBUG
-                            Debug.Assert(k <= ZopfliDeflater.MaximumMatch);
-#endif
                             costs[lengthArrayIndex + k] = newCost;
                             lengthArray[lengthArrayIndex + k] = k;
                         }
                     }
                 }
 
-#if DEBUG
-                Debug.Assert(costs[blockSize] >= 0);
-#endif
                 return lengthArray;
             }
 
@@ -3294,18 +3158,10 @@ namespace CompressSharper.Zopfli
 
                     if (match != null)
                     {
-#if DEBUG
-                        Debug.Assert(bufferStart + match.Value._length <= bufferEnd);
-#endif
                         return match.Value;
                     }
                 }
 
-#if DEBUG
-                Debug.Assert(limit <= ZopfliDeflater.MaximumMatch);
-                Debug.Assert(limit >= ZopfliDeflater.MinimumMatch);
-                Debug.Assert(bufferStart < bufferEnd);
-#endif
 
                 if (bufferStart + limit > bufferEnd)
                     limit = bufferEnd - bufferStart;
@@ -3313,15 +3169,9 @@ namespace CompressSharper.Zopfli
                 arrayEndPos = bufferStart + limit;
 
                 ushort hashPosition = (ushort)(bufferStart & ZopfliDeflater.WindowMask), hashPoint, previousHashPoint;
-#if DEBUG
-                Debug.Assert(hash.GetHashValue(true) < 65536);
-#endif
                 previousHashPoint = (ushort)hash.GetHashHead(hash.GetHashValue(true), true); /* During the whole loop, point == hprev[previousHashPoint]. */
                 hashPoint = hash.GetHashPrev(previousHashPoint, true);
 
-#if DEBUG
-                Debug.Assert(previousHashPoint == hashPosition);
-#endif
                 dist = ((hashPoint < previousHashPoint) ? previousHashPoint - hashPoint : ((ZopfliDeflater.WindowSize - hashPoint) + previousHashPoint));
 
                 ushort length, distance;
@@ -3331,17 +3181,8 @@ namespace CompressSharper.Zopfli
                 {
                     ushort currentlength = 0;
 
-#if DEBUG
-                    Debug.Assert(hashPoint < ZopfliDeflater.WindowSize);
-                    Debug.Assert(hashPoint == hash.GetHashPrev(previousHashPoint, useFirstHashValue));
-                    Debug.Assert(hash.GetHashValue(hashPoint, useFirstHashValue) == hash.GetHashValue(useFirstHashValue));
-#endif
                     if (dist > 0)
                     {
-#if DEBUG
-                        Debug.Assert(bufferStart < bufferEnd);
-                        Debug.Assert(dist <= bufferStart);
-#endif
                         scanPosition = bufferStart;
                         matchPosition = bufferStart - (int)dist;
 
@@ -3407,16 +3248,10 @@ namespace CompressSharper.Zopfli
                         break;
                 }
 
-#if DEBUG
-                Debug.Assert(bestlength <= limit);
-#endif
 
                 distance = (ushort)bestDistance;
                 length = bestlength;
 
-#if DEBUG
-                Debug.Assert(bufferStart + length <= bufferEnd);
-#endif
 
                 if (sublen.Length > 0 && _cache != null && limit == MaximumMatch)
                     /* The LMC cache starts at the beginning of the block rather than the beginning of the whole array. */

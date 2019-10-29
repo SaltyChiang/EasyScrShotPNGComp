@@ -310,6 +310,21 @@ namespace ComponentAce.Zlib
             bl_tree = new short[(2 * BL_CODES + 1) * 2]; // Huffman tree for bit lengths
         }
 
+        /*******************************/
+        /// <summary>
+        /// Performs an unsigned bitwise right shift with the specified number
+        /// </summary>
+        /// <param name="number">Number to operate on</param>
+        /// <param name="bits">Ammount of bits to shift</param>
+        /// <returns>The resulting number from the shift operation</returns>
+        internal static int URShift(int number, int bits)
+        {
+            if (number >= 0)
+                return number >> bits;
+            else
+                return (number >> bits) + (2 << ~bits);
+        }
+
         internal void lm_init()
         {
             window_size = 2 * w_size;
@@ -402,6 +417,16 @@ namespace ComponentAce.Zlib
             return (tree[n * 2] < tree[m * 2] || (tree[n * 2] == tree[m * 2] && depth[n] <= depth[m]));
         }
 
+        /// <summary>
+        /// This method returns the literal value received
+        /// </summary>
+        /// <param name="literal">The literal to return</param>
+        /// <returns>The received value</returns>
+        internal static long Identity(long literal)
+        {
+            return literal;
+        }
+
         // Scan a literal or distance tree to determine the frequencies of the codes
         // in the bit length tree.
         internal void scan_tree(short[] tree, int max_code)
@@ -418,7 +443,7 @@ namespace ComponentAce.Zlib
             {
                 max_count = 138; min_count = 3;
             }
-            tree[(max_code + 1) * 2 + 1] = (short)SupportClass.Identity(0xffff); // guard
+            tree[(max_code + 1) * 2 + 1] = (short)Identity(0xffff); // guard
 
             for (n = 0; n <= max_code; n++)
             {
@@ -591,7 +616,7 @@ namespace ComponentAce.Zlib
         internal void put_short(int w)
         {
             put_byte((byte)(w));
-            put_byte((byte)(SupportClass.URShift(w, 8)));
+            put_byte((byte)(URShift(w, 8)));
         }
         internal void putShortMSB(int b)
         {
@@ -613,7 +638,7 @@ namespace ComponentAce.Zlib
                 //      bi_buf |= (val << bi_valid);
                 bi_buf = (short)((ushort)bi_buf | (ushort)(((val << bi_valid) & 0xffff)));
                 put_short(bi_buf);
-                bi_buf = (short)(SupportClass.URShift(val, (Buf_size - bi_valid)));
+                bi_buf = (short)(URShift(val, (Buf_size - bi_valid)));
                 bi_valid += len - Buf_size;
             }
             else
@@ -659,7 +684,7 @@ namespace ComponentAce.Zlib
         internal bool _tr_tally(int dist, int lc)
         {
 
-            pending_buf[d_buf + last_lit * 2] = (byte)(SupportClass.URShift(dist, 8));
+            pending_buf[d_buf + last_lit * 2] = (byte)(URShift(dist, 8));
             pending_buf[d_buf + last_lit * 2 + 1] = (byte)dist;
 
             pending_buf[l_buf + last_lit] = (byte)lc; last_lit++;
@@ -688,7 +713,7 @@ namespace ComponentAce.Zlib
                 {
                     out_length = (int)(out_length + (int)dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
                 }
-                out_length = SupportClass.URShift(out_length, 3);
+                out_length = URShift(out_length, 3);
                 if ((matches < (last_lit / 2)) && out_length < in_length / 2)
                     return true;
             }
@@ -773,7 +798,7 @@ namespace ComponentAce.Zlib
             {
                 bin_freq += dyn_ltree[n * 2]; n++;
             }
-            data_type = (byte)(bin_freq > (SupportClass.URShift(ascii_freq, 2)) ? Z_BINARY : Z_ASCII);
+            data_type = (byte)(bin_freq > (URShift(ascii_freq, 2)) ? Z_BINARY : Z_ASCII);
         }
 
         // Flush the bit buffer, keeping at most 7 bits in it.
@@ -788,7 +813,7 @@ namespace ComponentAce.Zlib
             else if (bi_valid >= 8)
             {
                 put_byte((byte)bi_buf);
-                bi_buf = (short)(SupportClass.URShift(bi_buf, 8));
+                bi_buf = (short)(URShift(bi_buf, 8));
                 bi_valid -= 8;
             }
         }
@@ -936,8 +961,8 @@ namespace ComponentAce.Zlib
                 max_blindex = build_bl_tree();
 
                 // Determine the best encoding. Compute first the block length in bytes
-                opt_lenb = SupportClass.URShift((opt_len + 3 + 7), 3);
-                static_lenb = SupportClass.URShift((static_len + 3 + 7), 3);
+                opt_lenb = URShift((opt_len + 3 + 7), 3);
+                static_lenb = URShift((static_len + 3 + 7), 3);
 
                 if (static_lenb <= opt_lenb)
                     opt_lenb = static_lenb;

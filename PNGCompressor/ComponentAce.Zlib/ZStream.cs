@@ -110,18 +110,6 @@ namespace ComponentAce.Zlib
             dstate = null;
             return ret;
         }
-        public int deflateParams(int level, int strategy)
-        {
-            if (dstate == null)
-                return Z_STREAM_ERROR;
-            return dstate.deflateParams(this, level, strategy);
-        }
-        public int deflateSetDictionary(byte[] dictionary, int dictLength)
-        {
-            if (dstate == null)
-                return Z_STREAM_ERROR;
-            return dstate.deflateSetDictionary(this, dictionary, dictLength);
-        }
 
         // Flush as much pending output as possible. All deflate() output goes
         // through this function so some applications may wish to modify it
