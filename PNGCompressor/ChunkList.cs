@@ -12,20 +12,20 @@ namespace PNGComp
         private List<Chunk> chunkList;
         private int indexOfIDAT;
 
-        public ChunkList(Stream inputStream, int offset)
+        internal ChunkList(Stream inputStream, int offset)
         {
             chunkCount = 0;
             Append(inputStream, offset);
         }
 
-        public ChunkList(ChunkList chunkList)
+        internal ChunkList(ChunkList chunkList)
         {
             this.chunkCount = chunkList.chunkCount;
             this.chunkList = chunkList.chunkList;
             this.indexOfIDAT = chunkList.indexOfIDAT;
         }
 
-        public Chunk CombineIDAT()
+        internal Chunk CombineIDAT()
         {
             int chunkCountNew = 0;
             List<Chunk> chunkListNew = new List<Chunk> { chunkList[0] };
@@ -55,7 +55,7 @@ namespace PNGComp
             return chunkList[indexOfIDAT];
         }
 
-        public void SetIDAT(Chunk chunk)
+        internal void SetIDAT(Chunk chunk)
         {
             chunkList[indexOfIDAT] = chunk;
         }
@@ -74,7 +74,7 @@ namespace PNGComp
             }
         }
 
-        public byte[] PrepareForOutput()
+        internal byte[] PrepareForOutput()
         {
             byte[] chunkOut = new byte[] { };
             for (int i = 0; i < chunkCount; i++)
@@ -84,8 +84,77 @@ namespace PNGComp
             return chunkOut;
         }
     }
+    internal class CRC32
+    { // based on http://damieng.com/blog/2006/08/08/calculating_crc32_in_c_and_net
 
-    class Chunk
+        private const UInt32 defaultPolynomial = 0xedb88320;
+        private const UInt32 defaultSeed = 0xffffffff;
+        private static UInt32[] defaultTable;
+
+        private UInt32 hash;
+        private UInt32 seed;
+        private UInt32[] table;
+
+        public CRC32()
+            : this(defaultPolynomial, defaultSeed)
+        {
+        }
+
+        public CRC32(UInt32 polynomial, UInt32 seed)
+        {
+            table = InitializeTable(polynomial);
+            this.seed = seed;
+            this.hash = seed;
+        }
+
+        public void Update(byte[] buffer)
+        {
+            Update(buffer, 0, buffer.Length);
+        }
+
+        public void Update(byte[] buffer, int start, int length)
+        {
+            for (int i = 0, j = start; i < length; i++, j++)
+            {
+                unchecked
+                {
+                    hash = (hash >> 8) ^ table[buffer[j] ^ hash & 0xff];
+                }
+            }
+        }
+
+        public UInt32 GetValue()
+        {
+            return ~hash;
+        }
+
+        public void Reset()
+        {
+            this.hash = seed;
+        }
+
+        private static UInt32[] InitializeTable(UInt32 polynomial)
+        {
+            if (polynomial == defaultPolynomial && defaultTable != null)
+                return defaultTable;
+            UInt32[] createTable = new UInt32[256];
+            for (int i = 0; i < 256; i++)
+            {
+                UInt32 entry = (UInt32)i;
+                for (int j = 0; j < 8; j++)
+                    if ((entry & 1) == 1)
+                        entry = (entry >> 1) ^ polynomial;
+                    else
+                        entry = entry >> 1;
+                createTable[i] = entry;
+            }
+            if (polynomial == defaultPolynomial)
+                defaultTable = createTable;
+            return createTable;
+        }
+    }
+
+    internal class Chunk
     {
         private int Length;
         private byte[] LengthByte;
@@ -94,7 +163,7 @@ namespace PNGComp
         private byte[] Data;
         private byte[] CRC;
 
-        public Chunk(Stream inputStream)
+        internal Chunk(Stream inputStream)
         {
             this.LengthByte = new byte[4];
             this.TypeByte = new byte[4];
@@ -113,33 +182,33 @@ namespace PNGComp
             this.Type = Encoding.ASCII.GetString(this.TypeByte);
         }
 
-        public int GetChunkLength()
+        internal int GetChunkLength()
         {
             return this.Length + 12;
         }
 
-        public string GetChunkType()
+        internal string GetChunkType()
         {
             return this.Type;
         }
 
-        public byte[] GetChunkData()
+        internal byte[] GetChunkData()
         {
             return this.Data;
         }
 
-        public void SetChunkData(byte[] data)
+        internal void SetChunkData(byte[] data)
         {
             this.Data = data;
         }
 
-        public void Combine(Chunk chunk)
+        internal void Combine(Chunk chunk)
         {
             this.Length += chunk.Length;
             this.Data = this.Data.Concat(chunk.Data).ToArray();
         }
 
-        public void Refresh()
+        internal void Refresh()
         {
             this.Length = this.Data.Length;
             this.LengthByte = BitConverter.GetBytes(this.Length);
@@ -157,7 +226,7 @@ namespace PNGComp
             this.CRC = hash;
             //Console.WriteLine(BitConverter.ToString(hash));
         }
-        public byte[] PrepareForOutputChunk()
+        internal byte[] PrepareForOutputChunk()
         {
             byte[] chunkOut = new byte[] { };
             chunkOut = chunkOut.Concat(this.LengthByte).ToArray();

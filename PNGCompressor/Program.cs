@@ -5,8 +5,9 @@ namespace PNGComp
     {
         static void Main(string[] args)
         {
-            PNGComp pngComp = new PNGComp("test.png", "testout.png");
-            pngComp.Compress();
+            PNGComp pngComp = new PNGComp("testoutout.png", "testout.png");
+            pngComp.Compress(false);
+            
         }
     }
 }
