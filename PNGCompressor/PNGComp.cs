@@ -1,8 +1,10 @@
 ﻿using ComponentAce.Zlib;
 using CompressSharper.Zopfli;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PNGComp
 {
@@ -36,6 +38,8 @@ namespace PNGComp
             compressor.CompressIDAT(useZopfli);
             compressor.UpdateChunkList(chunkList);
             Write();
+            PNGCompMT.completCount += 1;
+            Console.WriteLine("Compressed {0:D}/{1:D}.", PNGCompMT.completCount, PNGCompMT.fileCount);
         }
 
         private void Read()
@@ -56,6 +60,56 @@ namespace PNGComp
             binaryWriter.Write(fileStream);
             binaryWriter.Close();
             file.Close();
+        }
+    }
+
+    public static class PNGCompMT
+    {
+        static private int i, j;
+        static public int completCount = 0;
+        static public int fileCount;
+
+        static private Task[] tasks;
+
+        static public void CompressMT()
+        {
+            string[] fileList = Directory.GetFiles(".", "*.png");
+            int threadsMaxCount = Environment.ProcessorCount;
+
+            CompressMT(fileList, threadsMaxCount);
+        }
+        static public void CompressMT(string[] fileList, int threadsMaxCount)
+        {
+            for (int i = 0; i < fileList.Length; i++)
+                fileList[i] = Path.GetFileName(fileList[i]);
+            fileCount = fileList.Length;
+            if (fileCount < threadsMaxCount)
+                threadsMaxCount = fileCount;
+
+            tasks = new Task[threadsMaxCount];
+            Action<object> action = (object obj) =>
+            {
+                string fileNameString = obj.ToString();
+                string fileTempNameString = "temp." + fileNameString;
+                PNGComp pngComp = new PNGComp(fileNameString, fileTempNameString);
+                pngComp.Compress(false);
+            };
+            Console.WriteLine("Compressing {0:D} .png files......", fileCount);
+            for (i = 0; i < fileCount; i++)
+            {
+                if (i < threadsMaxCount)
+                {
+                    tasks[i] = new Task(action, fileList[i]);
+                    tasks[i].Start();
+                }
+                else
+                {
+                    j = Task.WaitAny(tasks);
+                    tasks[j] = new Task(action, fileList[i]);
+                    tasks[j].Start();
+                }
+            }
+            Task.WaitAll(tasks);
         }
     }
 
