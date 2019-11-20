@@ -5,6 +5,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace PNGComp
 {
@@ -65,26 +67,28 @@ namespace PNGComp
 
     public static class PNGCompMT
     {
-        static private int i, j;
-        static public int completCount = 0;
-        static public int fileCount;
+        static internal int completCount = 0;
+        static internal int fileCount;
 
+        static private int i, j;
         static private Task[] tasks;
 
-        static public void CompressMT()
+        static internal void CompressMT()
         {
             string[] fileList = Directory.GetFiles(".", "*.png");
             int threadsMaxCount = Environment.ProcessorCount;
 
             CompressMT(fileList, threadsMaxCount);
         }
-        static public void CompressMT(string[] fileList, int threadsMaxCount)
+        static internal void CompressMT(string[] fileList, int threadsMaxCount)
         {
             for (int i = 0; i < fileList.Length; i++)
                 fileList[i] = Path.GetFileName(fileList[i]);
             fileCount = fileList.Length;
             if (fileCount < threadsMaxCount)
                 threadsMaxCount = fileCount;
+            if (!Directory.Exists("backup"))
+                Directory.CreateDirectory("backup");
 
             tasks = new Task[threadsMaxCount];
             Action<object> action = (object obj) =>
@@ -93,6 +97,10 @@ namespace PNGComp
                 string fileTempNameString = "temp." + fileNameString;
                 PNGComp pngComp = new PNGComp(fileNameString, fileTempNameString);
                 pngComp.Compress(false);
+                FileInfo fileInfo = new FileInfo(fileNameString);
+                fileInfo.MoveTo("backup/" + fileNameString);
+                fileInfo = new FileInfo(fileTempNameString);
+                fileInfo.MoveTo(fileNameString);
             };
             Console.WriteLine("Compressing {0:D} .png files......", fileCount);
             for (i = 0; i < fileCount; i++)
@@ -127,11 +135,12 @@ namespace PNGComp
 
         private static void CopyStream(Stream input, Stream output)
         {
-            byte[] buffer = new byte[4096];
-            int len;
-            while ((len = input.Read(buffer, 0, 4096)) > 0)
+            byte[] buffer = new byte[34572];
+            int len = input.Read(buffer, 0, 34572);
+            while (len > 0)
             {
                 output.Write(buffer, 0, len);
+                len = input.Read(buffer, 0, 34572);
             }
             output.Flush();
         }
@@ -139,14 +148,18 @@ namespace PNGComp
         internal void CompressIDAT(bool useZopfli)
         {
             byte[] data = idat.GetChunkData();
-            using (MemoryStream inputStream = new MemoryStream(data, 2, data.Length - 2))
+            using (MemoryStream inputStream = new MemoryStream(data, 2, data.Length - 6))
             {
                 using (MemoryStream tempStream = new MemoryStream())
                 {
-                    using (DeflateStream inflateStream = new DeflateStream(inputStream, CompressionMode.Decompress))
+                    using (DeflateStream inflateStream = new DeflateStream(inputStream, CompressionMode.Decompress, true))
                     {
                         inflateStream.CopyTo(tempStream);
                     }
+                    //ZOutputStream zOutputStream1 = new ZOutputStream(tempStream);
+                    //CopyStream(inputStream, zOutputStream1);
+                    //zOutputStream1.Flush();
+
                     tempStream.Position = 0;
                     using (MemoryStream outputStream = new MemoryStream())
                     {
@@ -160,14 +173,25 @@ namespace PNGComp
                         }
                         else
                         {
-                            ZOutputStream zOutputStream = new ZOutputStream(outputStream, zlibConst.Z_BEST_COMPRESSION);
+                            ZOutputStream zOutputStream = new ZOutputStream(outputStream, zlibConst.Z_NO_COMPRESSION);
                             CopyStream(tempStream, zOutputStream);
                             zOutputStream.Flush();
+                            //outputStream.Write(zlibNoCompressionFlag, 0, 2);
+                            //using (DeflateStream deflateStream = new DeflateStream(outputStream, CompressionLevel.NoCompression, true))
+                            //{
+                            //    tempStream.CopyTo(deflateStream, 34572);
+                            //}
                         }
 
                         byte[] dataNew = new byte[outputStream.Length];
                         outputStream.Position = 0;
                         outputStream.Read(dataNew, 0, dataNew.Length);
+                        for (int j = 0; j < dataNew.Length; j++)
+                        {
+                            if (data[j] != dataNew[j])
+                                Console.WriteLine("{0:D}", j);
+                        }
+
                         idat.SetChunkData(dataNew);
                         idat.Refresh();
                     }
